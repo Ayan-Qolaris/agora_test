@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import 'package:agora_rtc_engine/rtc_local_view.dart' as rtc_local_view;
 import 'package:agora_rtc_engine/rtc_remote_view.dart' as rtc_remote_view;
+import 'package:vibration/vibration.dart';
 
 class CallPage extends StatefulWidget {
   final String? channelName;
@@ -53,6 +54,9 @@ class _CallPageState extends State<CallPage> {
     configuration.dimensions = const VideoDimensions(width: 1920, height: 1080);
     await _engine.setVideoEncoderConfiguration(configuration);
     await _engine.joinChannel(token, "qolaris", null, 0);
+
+    // ! _vibrate()
+    _vibrate();
   }
 
   void _addAgoraEventHandlers() {
@@ -81,6 +85,8 @@ class _CallPageState extends State<CallPage> {
             final info = "User joined: $uid";
             _infoStrings.add(info);
             _users.add(uid);
+            Vibration.cancel();
+            // _vibrate();
           });
         },
         userOffline: (uid, reason) {
@@ -95,6 +101,12 @@ class _CallPageState extends State<CallPage> {
         },
       ),
     );
+  }
+
+  _vibrate() {
+    if (_users.isEmpty) {
+      Vibration.vibrate(pattern: [1000, 500, 1000], repeat: 1);
+    }
   }
 
   Widget _viewRows() {
@@ -189,6 +201,9 @@ class _CallPageState extends State<CallPage> {
           children: [
             _viewRows(),
             _toolbar(),
+            _users.isEmpty
+                ? const Positioned(top: 50, child: Text("Ringing"))
+                : const SizedBox(),
           ],
         ),
       ),
@@ -200,6 +215,7 @@ class _CallPageState extends State<CallPage> {
     _users.clear();
     _engine.leaveChannel();
     _engine.destroy();
+    Vibration.cancel();
     super.dispose();
   }
 }
